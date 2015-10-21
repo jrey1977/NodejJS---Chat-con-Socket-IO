@@ -1,0 +1,12 @@
+extends layout
+
+block content
+	.page-header
+	h1#bienvenido Bienvenido al chat
+		small Chat Socket.io
+
+	form(action="chat", method="post").entrada
+		.form-group
+			label#nicklabel(for="exampleInputInput") Nick:
+			input#nick.form-control(type="text",autocomplete="off",name="nick",placeholder="Indica tu nick")
+			button.btn.btn-success#entrar Entrar al chat

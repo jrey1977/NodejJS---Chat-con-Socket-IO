@@ -1,0 +1,127 @@
+doctype html
+html
+	head
+		title Socket.IO chat
+		link(rel='stylesheet', href='/stylesheets/bootstrap.css')
+		link(rel='stylesheet', href='/stylesheets/style.css')
+	body
+		block content
+		script(src="/socket.io/socket.io.js")
+		script(src="http://code.jquery.com/jquery-1.11.1.js")
+		script(src="http://code.jquery.com/ui/1.11.4/jquery-ui.js")
+		script.
+
+			var socket = io();
+			var cont = 0;
+			var fnick = $('#nick');
+			var mensaje = $('#mensaje');
+
+			function popUp(data,nick,mensaje){
+				if ( $('.popup[data='+data+']').length > 0 ){
+					// ESTA POP-UP YA EXISTIA, ASÍ QUE METO LOS DATOS NUEVOS Y LA VUELVO A MOSTRAR
+					$('.popup[data='+data+'] ul').append('<li><b>'+nick+'</b>: '+mensaje+'</li>');
+					$('.popup[data='+data+']').show();
+				} else {
+					// NO EXISTIA ESTA POP-UP, LA CREO CON LOS DATOS QUE RECIBO
+					var aleatorioTop = numAleatorio(500) + "px";
+					var aleatorioLeft = numAleatorio(500) + "px";
+					var nuevaPopUp = $('<div class="popup panel panel-default" data="'+data+'""><div class="panel-heading">Chat privado</div><button class="cerrar btn btn-danger">X</button><ul class="mensajesPrivados"><li><b>'+nick+'</b>: '+mensaje+'</li></ul><form action="" class="formPopUp"><input type="text" autocomplete="off" class="mensajePrivado"><button class="btn btn-success">Enviar</button></form></div>');
+					$(nuevaPopUp).css({'top':aleatorioTop,'left':aleatorioLeft}).appendTo('body').show();
+					$(nuevaPopUp).draggable();
+				}
+			}
+
+			$('form.chat').submit(function(){
+				socket.emit('datos', {nick : fnick.val(), message: mensaje.val()});
+				return false;
+			});
+
+			
+
+			socket.on('datos', function(msg){
+				$('#messages').append($('<li>').append('<b>'+msg.nick+'</b>: ' + msg.message));
+				$('#mensaje').val('');	
+			});
+			socket.on('chat users entrada', function(msg){
+				$('#num').text("Usuarios conectados: "+ msg.num_conectados);
+				nombreUserConectado = $('label.nombre').text();
+				// ESTA CHAPUCILLA LA HAGO PARA QUE NO META VARIOS REGISTROS EN LA BASE DE DATOS
+				// CADA VEZ QUE SE METE UN NUEVO USUARIO. 
+				// LO QUE HAGO ES COMPROBAR QUE ALGUIEN CON ESTE NOMBRE NO ESTÉ YA EN LA SALA
+				var repetidos = 0;
+				$('#usuarios_conectados li').each(function(){
+				    var nombre = $(this).text();
+				    if ( nombre == nombreUserConectado ){
+				    	repetidos ++;	
+			    	}
+				});
+				if ( repetidos == 0 ){
+					$('body').attr('id',msg.idUnica)
+					socket.emit('insertarUsuario', {nombreUserConectado: nombreUserConectado});
+				}
+			});
+
+			socket.on('chat users salida', function(msg){
+				$('#num').text("Usuarios conectados: "+ msg.num_conectados);
+			});
+
+			socket.on('mostrarUsuariosConectados', function(msg){
+				$('#usuarios_conectados').empty();
+				for ( i=0; i<msg.length; i++ ){
+					$('#usuarios_conectados').append('<li id='+msg[i]['id']+'>'+msg[i]['username']+'</li>');
+				}
+				
+			});
+
+			function numAleatorio(max) {
+				var aleatorio = Math.round(Math.random()* max);
+				return aleatorio;
+			}
+
+			$('#usuarios_conectados').on('click','li', function(){
+				var idDestinatario = $(this).attr('id');
+				var idPropia = $('body').attr('id');
+				if ( idDestinatario == idPropia ){
+					return false;
+				} else {
+					if ( $('.popup[data='+idDestinatario+']').length > 0 ){
+						// ESTA POP-UP YA EXISTIA, ASÍ QUE LA VUELVO A MOSTRAR
+						$('.popup[data='+idDestinatario+']').show();
+						$('.popup[data='+idDestinatario+']').draggable();
+					} else if ( $('.popup').length > 0 ) {
+					    // ES UNA NUEVA POP-UP, PERO YA HABÍA OTRA ANTES
+						var nuevaPopUp = $('<div class="popup panel panel-default" data="'+idDestinatario+'"><div class="panel-heading">Chat privado</div><button class="cerrar btn btn-danger">X</button><ul class="mensajesPrivados"></ul><form action="" class="formPopUp"><input type="text" autocomplete="off" class="mensajePrivado"><button class="btn btn-success">Enviar</button></form></div></div>')
+						var aleatorioTop = numAleatorio(500) + "px";
+						var aleatorioLeft = numAleatorio(500) + "px";
+						$(nuevaPopUp).appendTo('body').css({'top':aleatorioTop,'left':aleatorioLeft}).show();
+						$(nuevaPopUp).draggable();
+					} else {
+						// ES LA PRIMERA POP-UP QUE ABRO
+						var nuevaPopUp = $('<div class="popup panel panel-default" data="'+idDestinatario+'""><div class="panel-heading">Chat privado</div><button class="cerrar btn btn-danger">X</button><ul class="mensajesPrivados"></ul><form action="" class="formPopUp"><input type="text" autocomplete="off" class="mensajePrivado"><button class="btn btn-success">Enviar</button></form></div></div>');
+						$(nuevaPopUp).appendTo('body').show();
+						$(nuevaPopUp).draggable();
+					}
+				}
+			});
+
+			$('body').on('submit','.popup form',function(){
+				var popUp = $(this).parents('.popup');
+				var idDestinatario = popUp.attr('data');
+				var nombre = $('label.nombre').text();
+				var mensaje = popUp.find('.mensajePrivado').val();
+				popUp.find('ul.mensajesPrivados').append('<li><b>'+nombre+'</b>: '+mensaje+'</li>');
+				socket.emit('chatPrivado', (idDestinatario,idDestinatario),{nick:nombre,mensaje:mensaje});
+				popUp.find('.mensajePrivado').val('');
+				return false;
+			});
+
+			socket.on('chatPrivado', function(msg){
+				var data = msg.socketEmisor;
+				popUp(data,msg.nick,msg.mensaje);
+			});
+
+			$('body').on('click', 'button.cerrar', function(){
+				$(this).parent('.popup').hide();
+			});
+
+			

@@ -1,0 +1,165 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../app');
+var debug = require('debug')('chat:server');
+var http = require('http');
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+var server = http.createServer(app);
+var io = require('socket.io')(server);
+
+var Chat = require('../models/Chat.js');
+
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+io.on('connection', function(socket){
+
+    elSocketActual = socket.id;
+
+    // SACO POR CONSOLA UN MENSAJE CONFORME SE HA CONECTADO UN USUARIO
+    console.log('a user connected');
+
+    // MUESTRO A TODOS MENOS AL QUE SE CONECTA UN MENSAJE DE QUE ALGUIEN HA ENTRADO A LA SALA
+    socket.broadcast.emit('datos', {nick:"INFO",message:"Nuevo usuario en la sala"});
+
+    // PASO EL DATO DE LOS USUARIOS CONECTADOS EN ESTOS MOMENTOS
+    var id_conectados = Object.keys(io.engine.clients);
+    io.emit('chat users entrada',{num_conectados:io.engine.clientsCount,idUnica:socket.id});
+
+
+    // HE RECIBIDO DATOS, LOS DEVUELVO A LA WEB
+    socket.on('datos', function(msg){ 
+        io.emit('datos', msg);
+    });
+
+    socket.on('insertarUsuario', function(msg){
+        nombreNuevoUsuario = msg.nombreUserConectado;
+        var chat = new Chat({
+          'id': elSocketActual,
+          'username': nombreNuevoUsuario
+        });
+        chat.save(function(err, chat){
+            if(err) {
+              return res.send('500: Internal Server Error', 500);
+            } else {
+                Chat.find(function(err, list){
+                    if(err) {
+                        return res.send('500: Internal Server Error', 500);
+                    } else {
+                        console.log('Meto user '+nombreNuevoUsuario+' con id '+elSocketActual+' en BD');
+                        io.emit('mostrarUsuariosConectados', list);
+                    }
+                });
+            }
+        });
+    });
+
+    // ALGUIEN HABLA POR PRIVADO CON OTRA PERSONA
+    socket.on('chatPrivado', function(id,msg){
+        msg.socketEmisor = socket.id;
+        socket.broadcast.to(id).emit('chatPrivado', msg);
+    });
+
+    // AL DESCONECTAR, MUESTRO UN MENSAJE POR CONSOLA Y EN LA SALA DE CHAT.
+    // TAMBIÉN DEVUELVO EL NÚMERO ACTUAL DE USUARIOS CONECTADOS
+    socket.on('disconnect', function(){ 
+        io.emit('datos', {nick:"INFO",message:"Un usuario ha abandonado la sala"});
+        idSocketDesconectado = socket.id;
+        console.log('Saco al user con id '+idSocketDesconectado);
+        io.emit('chat users salida',{num_conectados:io.engine.clientsCount});
+        Chat.remove({ id: idSocketDesconectado }, function (err) { 
+            if (err) return handleError(err);
+            Chat.find(function(err, list){
+                if(err) {
+                      return res.send('500: Internal Server Error', 500);
+                } else {
+                    console.log('Borro user con id '+idSocketDesconectado+' de BD');
+                    io.emit('mostrarUsuariosConectados', list);
+                }
+            });
+        });
+
+    });
+
+});
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}

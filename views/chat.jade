@@ -1,0 +1,16 @@
+extends layout-chat
+
+block content
+	h1 Bienvenido/a 
+		label.nombre #{nombre}
+	a.btn.btn-danger#salir(href="./") Salir del chat
+	#contenido
+		ul#messages
+		sidebar#lateral
+			p#num usuarios conectados:0
+			ul#usuarios_conectados
+		form(action="").chat
+			input#nick(type="hidden",autocomplete="off", value="#{nombre}")
+			label#mlabel(for="m") Mensaje:
+			input#mensaje(type="text", autocomplete="off")
+			button.btn.btn-success#enviarMensaje Enviar
