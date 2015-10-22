@@ -7,7 +7,7 @@ Schema = mongoose.Schema;
 var uristring =
 process.env.MONGOLAB_URI ||
 process.env.MONGOHQ_URL ||
-'mongodb://heroku_gqb3tr50:Zapatero2!@ds041494.mongolab.com:41494/heroku_gqb3tr50';
+'mongodb://localhost/test';
 
 // The http server will listen to an appropriate port, or default to
 // port 3000.
