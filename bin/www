@@ -12,7 +12,7 @@ var http = require('http');
  * Get port from environment and store in Express.
  */
 
-var port = normalizePort(process.env.PORT || '3000');
+var port = normalizePort(process.env.PORT || '41494');
 app.set('port', port);
 
 /**
@@ -49,7 +49,7 @@ io.on('connection', function(socket){
 
 
     // HE RECIBIDO DATOS, LOS DEVUELVO A LA WEB
-    socket.on('datos', function(msg){ 
+    socket.on('datos', function(msg){
         io.emit('datos', msg);
     });
 
@@ -83,12 +83,12 @@ io.on('connection', function(socket){
 
     // AL DESCONECTAR, MUESTRO UN MENSAJE POR CONSOLA Y EN LA SALA DE CHAT.
     // TAMBIÉN DEVUELVO EL NÚMERO ACTUAL DE USUARIOS CONECTADOS
-    socket.on('disconnect', function(){ 
+    socket.on('disconnect', function(){
         io.emit('datos', {nick:"INFO",message:"Un usuario ha abandonado la sala"});
         idSocketDesconectado = socket.id;
         console.log('Saco al user con id '+idSocketDesconectado);
         io.emit('chat users salida',{num_conectados:io.engine.clientsCount});
-        Chat.remove({ id: idSocketDesconectado }, function (err) { 
+        Chat.remove({ id: idSocketDesconectado }, function (err) {
             if (err) return handleError(err);
             Chat.find(function(err, list){
                 if(err) {

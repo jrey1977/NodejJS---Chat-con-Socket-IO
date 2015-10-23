@@ -4,8 +4,11 @@ Schema = mongoose.Schema;
 //mongoose.connect('mongodb://localhost/test');
 
 
-var mongodbUri = 'mongodb://heroku_gqb3tr50:r22sg8c10850si7utsm4e3nj40@ds041494.mongolab.com:41494/heroku_gqb3tr50';
-var mongooseUri = uriUtil.formatMongoose(mongodbUri);
+var mongooseUri = process.env.MONGOLAB_URI ||
+                  process.env.MONGOHQ_URL ||
+                  'mongodb://localhost/test';
+var mongooseUri = uriUtil.formatMongoose(mongooseUri);
+
 
 mongoose.connect(mongooseUri);
 
