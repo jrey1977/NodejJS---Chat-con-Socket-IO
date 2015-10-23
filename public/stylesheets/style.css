@@ -127,7 +127,7 @@ h1#bienvenido small{
 
 #messages li:nth-child(odd) { background: #eee; }
 
-#nick { 
+#nick {
     margin: 10px;
     width: 100%;
     margin-left: 0px;
@@ -135,14 +135,14 @@ h1#bienvenido small{
 }
 
 #nicklabel{
-    color: #645656;
-    font-size: 20px;
-    position: relative;
-    top: 7px;
-    left: 3px;
-    text-align: left;
-    float: left;
-    margin-bottom: 21px;
+	 color: #645656;
+	 display: block;
+	 font-size: 20px;
+	 left: 3px;
+	 margin-bottom: 21px;
+	 position: relative;
+	 text-align: left;
+	 top: 7px;
 }
 
 #mlabel{color: black;}
@@ -259,7 +259,7 @@ p#num{
     height: 35px;
     vertical-align: top;
 }
-    
+
 
 .cerrar{
     position: absolute;
