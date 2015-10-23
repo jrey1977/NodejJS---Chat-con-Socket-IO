@@ -1,5 +1,5 @@
-var mongoose = require('mongoose'),
-var uriUtil = require('mongodb-uri'),
+var mongoose = require('mongoose');
+var uriUtil = require('mongodb-uri');
 Schema = mongoose.Schema;
 //mongoose.connect('mongodb://localhost/test');
 
@@ -13,13 +13,9 @@ var db = mongoose.connection;
 
 db.on('error', console.error.bind(console, 'connection error:'));
 
-db.once('open', function callback () {
-    var ChatSchema = new Schema({
-    	id: 'String',
-    	username: 'String'
-    });
-}
-
-
+var ChatSchema = new Schema({
+  id: 'String',
+  username: 'String'
+});
 
 module.exports = mongoose.model('Chat', ChatSchema);
