@@ -1,31 +1,27 @@
 var mongoose = require('mongoose'),
+var uriUtil = require('mongodb-uri'),
 Schema = mongoose.Schema;
 //mongoose.connect('mongodb://localhost/test');
 
-// Here we find an appropriate database to connect to, defaulting to
-// localhost if we don't find one.
-var uristring =
-process.env.MONGOLAB_URI ||
-process.env.MONGOHQ_URL ||
-'mongodb://heroku_gqb3tr50:r22sg8c10850si7utsm4e3nj40@ds041494.mongolab.com:41494/heroku_gqb3tr50';
+var options = { server: { socketOptions: { keepAlive: 1, connectTimeoutMS: 30000 } },
+                replset: { socketOptions: { keepAlive: 1, connectTimeoutMS : 30000 } } }; 
 
-// The http server will listen to an appropriate port, or default to
-// port 3000.
-var theport = process.env.PORT || 3000;
+var mongodbUri = 'mongodb://heroku_gqb3tr50:r22sg8c10850si7utsm4e3nj40@ds041494.mongolab.com:41494/heroku_gqb3tr50';
+var mongooseUri = uriUtil.formatMongoose(mongodbUri);
 
-// Makes connection asynchronously.  Mongoose will queue up database
-// operations and release them when the connection is complete.
-mongoose.connect(uristring, function (err, res) {
-  if (err) {
-  console.log ('ERROR connecting to: ' + uristring + '. ' + err);
-  } else {
-  console.log ('Succeeded connected to: ' + uristring);
-  }
-});
+mongoose.connect(mongooseUri, options);
 
-var ChatSchema = new Schema({
-	id: 'String',
-	username: 'String'
-});
+var db = mongoose.connection;
+
+db.on('error', console.error.bind(console, 'connection error:'));
+
+db.once('open', function callback () {
+    var ChatSchema = new Schema({
+    	id: 'String',
+    	username: 'String'
+    });
+}
+
+
 
 module.exports = mongoose.model('Chat', ChatSchema);
